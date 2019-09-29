@@ -137,13 +137,15 @@ Generic functions cannot be used directly, for instance, the following code caus
             fun reservation ->
                 log "Capacity: %d" capacity                     // First use fixes a type for log
                 log "Connection String %s" connectionString     // ERROR two different types for log
+                ...
 
+Function `log` outside of `tryAcceptD` is generic, but the instantiation in `tryAcceptD` cannot be generic.
 Instead we can use an interface like this:
 
-    let  log fmt = Printf.ksprintf (printfn "%s") fmt
-    type ILogger = abstract Log : Printf.StringFormat<'a,unit> -> 'a
-    let   logger = { new ILogger with member __.Log fmt = log fmt }
-    let  loggerD = Depend.depend0 <@ logger @>
+    let   log fmt = Printf.ksprintf (printfn "%s") fmt
+    type ILogger  = abstract Log : Printf.StringFormat<'a,unit> -> 'a
+    let   logger  = { new ILogger with member __.Log fmt = log fmt }
+    let   loggerD = Depend.depend0 <@ logger @>
 
     let tryAcceptD = Depend.depend {
         let! logger = loggerD
@@ -152,6 +154,7 @@ Instead we can use an interface like this:
             fun reservation ->
                 logger.Log "Capacity: %d" capacity
                 logger.Log "Connection String %s" connectionString  // no problem
+                ...
 
 
 ## Printing the dependency list
