@@ -5,7 +5,7 @@ This module provides a novel approach to dependency injection in F#.
 
 Among its features:
 - Simple explicit code injection
-- Progresive coding with reduced refactoring.
+- Progresive coding with reduced refactoring
 - Automatic multilevel code injection
 - Partial localized code injection
 - Selective injection
@@ -83,6 +83,7 @@ So you add Dependency Injection:
                 else None
     }
 
+    // Reservation -> int option
     let tryAccept = tryAcceptD |> Depend.resolver []
 
 This example demonstrates how to declare and reference the dependencies.
@@ -113,8 +114,22 @@ We can selectively replace dependencies this way:
 
     let readReservationsMock connStr date = [ { ... } ]
 
-    let tryAccept = tryAcceptD |> Depend.resolver [ Depend.replace0 <@ capacity            @> 50 
-                                                    Depend.replace2 <@ DB.readReservations @> readReservationsMock ]
+    let tryAccept = // Reservation -> int option
+        tryAcceptD 
+        |> Depend.resolver 
+            [   Depend.replace0 <@ Globals.capacity    @> 50 
+                Depend.replace2 <@ DB.readReservations @> readReservationsMock ]
 
 
+### Printing the dependency list
+
+    tryAcceptD |> Depend.toString |> print
+
+produces the following output:
+
+    FSI_0002+CommonDefs+DB.createReservation           <fun:getName2@382>
+    FSI_0002+CommonDefs+DB.readReservations            <fun:getName2@382>
+    FSI_0002+CommonDefs+Globals.capacity               100
+    FSI_0002+CommonDefs+Globals.connectionString       "some connection string"
+    NoMore <fun:tryAcceptD@1241-4>
 
