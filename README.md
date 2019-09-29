@@ -93,7 +93,10 @@ The line
     let readReservationsD   = Depend.depend2 <@ DB.readReservations  @>` 
     
 provides a definition for a replaceable 
-injection that uses by default the current definition of `DB.readReservations`. It can only be replaced by a function of the same type: `string -> DateTimeOffset -> Reservation list`. It is similar to a reader monad with some key differences.
+injection that uses by default the current definition of `DB.readReservations`. The last digit indicates the number of 
+parameters the function takes, `depend0` means it is not a function, `depend1` a function with one parameter, 
+`depend2` takes 2, and so on, up to 5.
+It can only be replaced by a function of the same type: `string -> DateTimeOffset -> Reservation list`. It is similar to a reader monad with some key differences.
 
 I use capital D as a suffix to indicate the monadic type of the element: `readReservationsD` is a dependency injection
 for `readReservations`. So `readReservationsD` is of type: `Depend<(string -> DateTimeOffset -> Reservation list)>`.
@@ -120,8 +123,38 @@ We can selectively replace dependencies this way:
             [   Depend.replace0 <@ Globals.capacity    @> 50 
                 Depend.replace2 <@ DB.readReservations @> readReservationsMock ]
 
+## Generic functions
 
-### Printing the dependency list
+Generic functions cannot be used directly, for instance, the following code causes an error:
+
+    let log  fmt = Printf.ksprintf (printfn "%s") fmt
+    let logD ()  = Depend.depend0 <@ log @>   
+    
+    let tryAcceptD = Depend.depend {
+        let! log = logD() // use a function to avoid Generic Value error
+        ...
+        return
+            fun reservation ->
+                log "Capacity: %d" capacity                     // First use fixes a type for log
+                log "Connection String %s" connectionString     // ERROR two different types for log
+
+Instead we can use an interface like this:
+
+    let  log fmt = Printf.ksprintf (printfn "%s") fmt
+    type ILogger = abstract Log : Printf.StringFormat<'a,unit> -> 'a
+    let   logger = { new ILogger with member __.Log fmt = log fmt }
+    let  loggerD = Depend.depend0 <@ logger @>
+
+    let tryAcceptD = Depend.depend {
+        let! logger = loggerD
+        ...
+        return
+            fun reservation ->
+                logger.Log "Capacity: %d" capacity
+                logger.Log "Connection String %s" connectionString  // no problem
+
+
+## Printing the dependency list
 
     tryAcceptD |> Depend.toString |> printfn "%s"
 
