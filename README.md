@@ -16,7 +16,7 @@ The best way to explain how it works is with examples.
 (Code examples taken from this excellent blog:
 https://blog.ploeh.dk/2017/01/30/partial-application-is-dependency-injection/
 
-Since this is going to be an evolutionary example. We start with  some common code required going forward:
+Since this is going to be an evolving example. We start with  some common code required going forward:
 
     module CommonDefs =
         open System
@@ -36,6 +36,8 @@ Since this is going to be an evolutionary example. We start with  some common co
             let readReservations (connectionString:string) (date:DateTimeOffset) : Reservation list = failwith "Not Implemented"
             // string -> Reservation -> int
             let createReservation (connectionString:string) (reservation:Reservation) : int = failwith "Not implemented"
+
+### First code version: Everything hardcoded.
 
 The example deals with the creation of a reservation system and evolves around one function called `tryAccept` :
 
@@ -57,7 +59,7 @@ This is how programming most code normally starts.
 You try to make the code work for the specific case you are trying to solve.
 Later on you can make code more generic and testable.
 
-## Dependency Injection
+## SEcond version: Dependency Injection
 
 So you add Dependency Injection:
 
