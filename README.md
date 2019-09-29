@@ -10,7 +10,7 @@ Among its features:
 - Partial localized code injection
 - Capacity to print out injected code
 
-## Usage:
+## Usage Example
 The best way to explain how it works is with examples. 
 (Code examples taken from this excellent blog:
 https://blog.ploeh.dk/2017/01/30/partial-application-is-dependency-injection/
