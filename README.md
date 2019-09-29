@@ -65,7 +65,7 @@ So you add Dependency Injection:
     let readReservationsD   = Depend.depend2 <@ DB     .readReservations  @>
     let createReservationD  = Depend.depend2 <@ DB     .createReservation @>
 
-    // Reservation -> int option
+    // Depend<(Reservation -> int option)>
     let tryAcceptD = Depend.depend {
         let! connectionString   = connectionStringD
         let! capacity           = capacityD
@@ -85,9 +85,13 @@ So you add Dependency Injection:
 This example demonstrates how to declare and reference the dependencies.
 
 The line `let readReservationsD   = Depend.depend2 <@ DB.readReservations  @>` provides a definition for a replaceable 
-injection that uses by default the current definition of `DB.readReservations`. It can only be replaced by a function of the same type: `string -> DateTimeOffset -> Reservation list`.
+injection that uses by default the current definition of `DB.readReservations`. It can only be replaced by a function of the same type: `string -> DateTimeOffset -> Reservation list`. It is similar to a reader monad with some key differences.
 
 I use capital D as a suffix to indicate the monadic type of the element: `readReservationsD` is a dependency injection
 for `readReservations`. So `readReservationsD` is of type: `Depend<(string -> DateTimeOffset -> Reservation list)>`.
+
+To use the dependencies there is a Computation Expression: `Depend.depend`. The first section of `tryAcceptD` retrieves the actual dependent values using `let!` syntax. 
+
+After retrieving all the dependencies we immediately return the function: with `return fun reservation ->`. In this first version the returned function is exactly like the original `tryAccept0` except that it uses the retrieved values instead of the global ones (in modules Global and DB). Notice that the parameters (in this case `reservation`) are in the inner function not the outside one.
 
 
