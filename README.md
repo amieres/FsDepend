@@ -5,11 +5,11 @@ This module provides a novel approach to dependency injection in F#.
 
 Among its features:
 - Simple explicit code injection
-- Progresive coding with reduced refactoring
 - Automatic multilevel code injection
 - Partial localized code injection
 - Selective injection
 - Capacity to print out injected code
+- A natural way to coding with reduced refactoring
 
 ## Usage Example
 The best way to explain how it works is with examples. 
@@ -53,7 +53,7 @@ The example deals with the creation of a reservation system and evolves around o
             then DB.createReservation Globals.connectionString { reservation with IsAccepted = true } |> Some
             else None
 
-The first version `tryAccept0` does not use any dependency injection, it simply uses the code that is above. In that sense the functionality is fully 'Hard Coded'. Testing can only be done by providing actual connections.
+The first version `tryAccept0` does not use any dependency injection, it simply uses the code that is above it. In that sense the functionality is fully 'Hard Coded'. Testing can only be done by providing actual connections.
 
 This is how programming normally starts. 
 You try to make the code work for the specific case you are trying to solve.
@@ -124,6 +124,47 @@ We can selectively replace dependencies this way:
             [   Depend.replace0 <@ Globals.capacity    @> 50 
                 Depend.replace2 <@ DB.readReservations @> readReservationsMock ]
 
+## Multilevel Injection
+
+The function `tryAccept` does not need to be aware of `connectionString` as that is a concern of `readReservations` and 
+`createReservation`. Instead we can bake `connectionString` into the `DB.` functions in an intermediate step like this:
+
+    let readCreateReservationsD = Depend.depend {
+        let! connectionString  = connectionStringD
+        let! readReservations  = readReservationsD
+        let! createReservation = createReservationD
+        return (readReservations  connectionString)
+              ,(createReservation connectionString)
+    }
+
+And refactor `tryAcceptD` this way:
+
+    let tryAcceptD = Depend.depend {
+        let! capacity           = capacityD
+        let! readReservations2
+           , createReservation2 = readCreateReservationsD
+        return
+            fun reservation ->
+                let! reservations   = readReservations2 reservation.Date
+                let  reservedSeats  = reservations |> List.sumBy (fun x -> x.Quantity)
+                if reservedSeats + reservation.Quantity <= capacity
+                then let!        i  = createReservation2 { reservation with IsAccepted = true } 
+                     return Some i
+                else return None
+    }
+
+## Printing the dependency list
+
+    tryAcceptD |> Depend.toString |> printfn "%s"
+
+produces the following output:
+
+    FSI_0002+CommonDefs+DB.createReservation           <fun:getName2@382>
+    FSI_0002+CommonDefs+DB.readReservations            <fun:getName2@382>
+    FSI_0002+CommonDefs+Globals.capacity               100
+    FSI_0002+CommonDefs+Globals.connectionString       "some connection string"
+    NoMore <fun:tryAcceptD@1241-4>
+    
 ## Generic functions
 
 Generic functions cannot be used directly, for instance, the following code causes an error:
@@ -156,17 +197,4 @@ Instead we can use an interface like this:
                 logger.Log "Capacity: %d" capacity
                 logger.Log "Connection String %s" connectionString  // no problem
                 ...
-
-
-## Printing the dependency list
-
-    tryAcceptD |> Depend.toString |> printfn "%s"
-
-produces the following output:
-
-    FSI_0002+CommonDefs+DB.createReservation           <fun:getName2@382>
-    FSI_0002+CommonDefs+DB.readReservations            <fun:getName2@382>
-    FSI_0002+CommonDefs+Globals.capacity               100
-    FSI_0002+CommonDefs+Globals.connectionString       "some connection string"
-    NoMore <fun:tryAcceptD@1241-4>
 
