@@ -8,6 +8,7 @@ Among its features:
 - Progresive coding with reduced refactoring.
 - Automatic multilevel code injection
 - Partial localized code injection
+- Selective injection
 - Capacity to print out injected code
 
 ## Usage Example
