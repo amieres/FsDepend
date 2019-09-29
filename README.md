@@ -123,7 +123,7 @@ We can selectively replace dependencies this way:
 
 ### Printing the dependency list
 
-    tryAcceptD |> Depend.toString |> print
+    tryAcceptD |> Depend.toString |> printfn "%s"
 
 produces the following output:
 
