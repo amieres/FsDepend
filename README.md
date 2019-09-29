@@ -65,8 +65,8 @@ So you add Dependency Injection:
 
     let connectionStringD   = Depend.depend0 <@ Globals.connectionString  @>
     let capacityD           = Depend.depend0 <@ Globals.capacity          @>
-    let readReservationsD   = Depend.depend2 <@ DB     .readReservations  @>
-    let createReservationD  = Depend.depend2 <@ DB     .createReservation @>
+    let readReservationsD   = Depend.depend2 <@ DB.readReservations       @>
+    let createReservationD  = Depend.depend2 <@ DB.createReservation      @>
 
     // Depend<(Reservation -> int option)>
     let tryAcceptD = Depend.depend {
@@ -87,14 +87,34 @@ So you add Dependency Injection:
 
 This example demonstrates how to declare and reference the dependencies.
 
-The line `let readReservationsD   = Depend.depend2 <@ DB.readReservations  @>` provides a definition for a replaceable 
+The line
+
+    let readReservationsD   = Depend.depend2 <@ DB.readReservations  @>` 
+    
+provides a definition for a replaceable 
 injection that uses by default the current definition of `DB.readReservations`. It can only be replaced by a function of the same type: `string -> DateTimeOffset -> Reservation list`. It is similar to a reader monad with some key differences.
 
 I use capital D as a suffix to indicate the monadic type of the element: `readReservationsD` is a dependency injection
 for `readReservations`. So `readReservationsD` is of type: `Depend<(string -> DateTimeOffset -> Reservation list)>`.
 
-To facilitate the use of dependencies there is a Computation Expression: **`...= Depend.depend {`**. The first section of `tryAcceptD` retrieves the actual dependent values using `let!` syntax. 
+To facilitate the use of dependencies there is a Computation Expression: **`...= Depend.depend {`**. The first section of `tryAcceptD` retrieves the actual dependent values using `let!` syntax:
+
+    let! readReservations   = readReservationsD
 
 After retrieving all the dependencies we immediately return the function as a lambda with **`return fun reservation ->`**. In this first version the returned lambda function is exactly like the original `tryAccept0` except that it uses the retrieved values instead of the global ones (in modules Global and DB). Notice that the parameters (in this case `reservation`) are in the lambda function not `tryAcceptD`.
+
+Finally the line:
+
+    let tryAccept = tryAcceptD |> Depend.resolver []
+    
+creates a version of tryAccept that uses the default values for each dependency. 
+
+We can selectively replace dependencies this way:
+
+    let readReservationsMock connStr date = [ { ... } ]
+
+    let tryAccept = tryAcceptD |> Depend.resolver [ Depend.replace0 <@ capacity            @> 50 
+                                                    Depend.replace2 <@ DB.readReservations @> readReservationsMock ]
+
 
 
