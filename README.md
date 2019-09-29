@@ -55,11 +55,11 @@ The example deals with the creation of a reservation system and evolves around o
 
 The first version `tryAccept0` does not use any dependency injection, it simply uses the code that is above. In that sense the functionality is fully 'Hard Coded'. Testing can only be done by providing actual connections.
 
-This is how programming most code normally starts. 
+This is how programming normally starts. 
 You try to make the code work for the specific case you are trying to solve.
-Later on you can make code more generic and testable.
+Later on you make the code more generic and testable by, among other things...
 
-## SEcond version: Dependency Injection
+## Second version: adding Dependency Injection
 
 So you add Dependency Injection:
 
@@ -93,8 +93,8 @@ injection that uses by default the current definition of `DB.readReservations`. 
 I use capital D as a suffix to indicate the monadic type of the element: `readReservationsD` is a dependency injection
 for `readReservations`. So `readReservationsD` is of type: `Depend<(string -> DateTimeOffset -> Reservation list)>`.
 
-To use the dependencies there is a Computation Expression: `Depend.depend`. The first section of `tryAcceptD` retrieves the actual dependent values using `let!` syntax. 
+To facilitate the use of dependencies there is a Computation Expression: `Depend.depend`. The first section of `tryAcceptD` retrieves the actual dependent values using `let!` syntax. 
 
-After retrieving all the dependencies we immediately return the function: with `return fun reservation ->`. In this first version the returned function is exactly like the original `tryAccept0` except that it uses the retrieved values instead of the global ones (in modules Global and DB). Notice that the parameters (in this case `reservation`) are in the inner function not the outside one.
+After retrieving all the dependencies we immediately return the functionas a lambda with `return fun reservation ->`. In this first version the returned lambda function is exactly like the original `tryAccept0` except that it uses the retrieved values instead of the global ones (in modules Global and DB). Notice that the parameters (in this case `reservation`) are in the lambda function not `tryAcceptD`.
 
 
