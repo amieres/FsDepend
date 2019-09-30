@@ -219,8 +219,8 @@ Generic functions cannot be used directly, for instance, the following code caus
                 log "Connection String %s" connectionString     // ERROR two different types for log
                 ...
 
-Function `log` outside of `tryAcceptD` is generic, but the instantiation in `tryAcceptD` cannot be generic.
-Instead we can use an interface like this:
+The function `log` outside of `tryAcceptD` is generic, but the instantiation in `tryAcceptD` cannot be generic.
+To solve this issue we can use an interface instead of a function, like this:
 
     let   log fmt = Printf.ksprintf (printfn "%s") fmt
     type ILogger  = abstract Log : Printf.StringFormat<'a,unit> -> 'a
@@ -236,3 +236,4 @@ Instead we can use an interface like this:
                 logger.Log "Connection String %s" connectionString  // no problem
                 ...
 
+The `logger` object of type `ILogger` can have a generic member `Log` which can be used with different types in `tryAccept`.
