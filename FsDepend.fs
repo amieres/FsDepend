@@ -52,10 +52,10 @@ module Depend =
         |_-> shouldBe q
 
     type Depend<'T> = 
-    | Dependency of name:string * f:obj * (obj -> Depend<'T>)
+    | Dependency of (string * obj) option * (obj -> Depend<'T>)
     | NoMore     of 'T
 
-    let dependByName nm (defF:'f) (kf:'f->'T) = Dependency(nm, box defF, fun f -> NoMore (kf (unbox f)) )
+    let dependByName nm (defF:'f) (kf:'f->'T) = Dependency(Some(nm, box defF), fun f -> NoMore (kf (unbox f)) )
 
     let depend0   q                                                                      = let (nm, f) = getName0 q in dependByName nm f id
     let depend1   q                                                                      = let (nm, f) = getName1 q in dependByName nm f id
@@ -73,44 +73,47 @@ module Depend =
     let bind (f: 'a -> Depend<'b>) (pa:Depend<'a>) : Depend<'b> = 
         let rec bindR =
             function
-            | Dependency(nm, defF, k) -> Dependency(nm, defF, fun p -> bindR (k p) ) 
-            | NoMore     v            -> Dependency("", ()  , fun p -> f v         )
+            | Dependency(dep, k) -> Dependency(dep , fun p -> bindR (k p) ) 
+            | NoMore     v       -> Dependency(None, fun p -> f v         )
         bindR pa
     let rtn = NoMore
     let map f = bind (f >> rtn)
 
-    let replacer lst packed =
+    let replacer lst depend =
         let rec replace =
             function
-            | Dependency(nm, defF, k) ->
+            | Dependency(None       , k)      -> Dependency(None        , k >> replace)
+            | Dependency(Some(nm, v), k)      ->
                 lst 
                 |> Seq.tryFind (fst >> ((=) nm))
-                |> Option.map  (fun (nm2, f2) -> Dependency(nm2, f2  , k >> replace)  )
-                |> Option.defaultWith(fun ()  -> Dependency(nm , defF, k >> replace) )
-            | NoMore f                        -> NoMore f
-        replace packed
+                |> Option.map  (snd >> fun v2 -> Dependency(Some(nm, v2), k >> replace) )
+                |> Option.defaultWith(fun ()  -> Dependency(Some(nm, v ), k >> replace) )
+            | NoMore v                        -> NoMore              v
+        replace depend
 
     let replacerDef lst depend =
         let rec replace =
             function
-            | Dependency(nm, defF, k) ->
+            | Dependency(None       , k)          -> Dependency(None         , k >> replace)
+            | Dependency(Some(nm, v), k)          ->
                 lst 
-                |> Seq.tryFind (fun (nmN, (nm2, f2)) -> nm2 = nm)
-                |> Option.map  (fun (nmN, (nm2, f2)) -> Dependency(nmN, f2  , k >> replace)  )
-                |> Option.defaultWith(fun ()         -> Dependency(nm , defF, k >> replace) )
-            | NoMore f                               -> NoMore f
+                |> Seq.tryFind (fun (_, (nm2, _)) -> nm2 = nm)
+                |> Option.map  (fun (nmN,(_, v2)) -> Dependency(Some(nmN, v2), k >> replace) )
+                |> Option.defaultWith(fun ()      -> Dependency(Some(nm , v ), k >> replace) )
+            | NoMore v                            -> NoMore               v
         replace depend
 
     let resolver lst depend = 
         let rec resolve =
             function
-            | Dependency(nm, defF, k) ->
+            | Dependency(None       , k)      -> k () |> resolve
+            | Dependency(Some(nm, v), k)      ->
                 lst 
                 |> Seq.tryFind (fst >> ((=) nm))
-                |> Option.map  (fun (nm2, f2) -> k f2  )
-                |> Option.defaultWith(fun () -> k defF )
+                |> Option.map  (snd >> fun v2 -> k v2  )
+                |> Option.defaultWith(fun ()  -> k v )
                 |> resolve
-            | NoMore f                              -> f
+            | NoMore v                        ->   v
         resolve depend
 
     type DependBuilder() =
@@ -124,17 +127,18 @@ module Depend =
         let rec collect lst dep =
             let     lst2 = dep :: lst
             match dep with
-            | Dependency(nm, defF, k) -> collect lst2 (k defF)
-            | NoMore f                -> lst2
+            | Dependency(None      , k) -> collect lst2 (k () )
+            | Dependency(Some(_, v), k) -> collect lst2 (k v  )
+            | NoMore f                  -> lst2
         collect [] dep
-        |> List.filter (function| Depend.Dependency("",_,_) -> false |_-> true) 
+        |> List.filter (function| Depend.Dependency(None,_) -> false |_-> true) 
         |> List.rev 
 
     let toString dep =
         getDependencies dep
         |> Seq.map       
             (function 
-            | Depend.Dependency(nm, v, next) -> sprintf "%-50s %A" nm v
+            | Depend.Dependency(Some(nm, v), next) -> sprintf "%-50s %A" nm v
             | x -> string x)
         |> Seq.distinct
         |> Seq.sort
