@@ -93,28 +93,37 @@ The line
     let readReservationsD   = Depend.depend2 <@ DB.readReservations  @>` 
     
 provides a definition for a replaceable 
-injection that uses by default the current definition of `DB.readReservations`. The last digi of `Depend.depend0` indicates 
-the number of parameters the function takes, `depend0` means it is not a function, `depend1` a function with one parameter, 
+injection that uses by default the current definition of `DB.readReservations`. The last digit of `Depend.depend0` indicates 
+the number of parameters the function takes, `depend0` means it is not a function but a value, `depend1` a function with one parameter, 
 `depend2` takes 2, and so on, up to 5.
-It can only be replaced by a function of the same type: `string -> DateTimeOffset -> Reservation list`. 
-It is similar to a reader monad with some key differences.
 
-The capital `D` as a suffix to indicate that it is a `Depend` monad: `readReservationsD` is a dependency injection
+The capital `D` at the end is used to indicate that it is a `Depend` monad: `readReservationsD` is a dependency injection
 for `readReservations`. So `readReservationsD` is of type: `Depend<(string -> DateTimeOffset -> Reservation list)>`.
 
 To facilitate the use of dependencies there is a Computation Expression: **`...= Depend.depend {`**. The first section of `tryAcceptD` retrieves the actual dependent values using `let!` syntax:
 
     let! readReservations   = readReservationsD
 
-After retrieving all the dependencies we immediately return the function as a lambda with **`return fun reservation ->`**. In this first version the returned lambda function is exactly like the original `tryAccept0` except that it uses the retrieved values instead of the global ones (in modules Global and DB). Notice that the parameters (in this case `reservation`) are in the lambda function not `tryAcceptD`.
+After retrieving all the dependencies we immediately return the function as a lambda with **`return fun reservation ->`**. In this 
+version of the example the returned lambda function is exactly like the original `tryAccept0` 
+except that it uses the retrieved values instead of the global ones (`readReservations` instead of  `DB.readReservations`). 
+Notice that the input parameter to `tryAccept` (in this case `reservation`) go in the lambda function not `tryAcceptD`.
+That is, instead of putting `resevation` here:
 
-Finally the line:
+    let tryAcceptD reservation = Depend.depend {...
+    
+the parameter goes here:
+
+    return fun reservation -> ...
+
+Finally, the line:
 
     let tryAccept = tryAcceptD |> Depend.resolver []
     
 returns a version of tryAccept that uses the default values for all dependencies. 
+The input list are for the dependencies to be injected, when it is empty the default values are used.
 
-We can selectively replace dependencies this way:
+This way we can selectively replace dependencies, for instance:
 
     let readReservationsMock connStr date = [ { ... } ]
 
@@ -126,8 +135,9 @@ We can selectively replace dependencies this way:
 
 ## Multilevel Injection
 
-The function `tryAccept` does not need to be aware of `connectionString` as that is a concern of `readReservations` and 
-`createReservation`. Instead we can bake `connectionString` into the `DB.` functions in an intermediate step like this:
+In the present example, the function `tryAccept` does not really
+need to be aware of `connectionString` as that is a concern of `readReservations` and 
+`createReservation`. Instead we can bake `connectionString` into the `DB.` functions in an intermediate step, like this:
 
     let readCreateReservationsD = Depend.depend {
         let! connectionString  = connectionStringD
@@ -152,10 +162,10 @@ And refactor `tryAcceptD` this way:
                 else None
     }
 
-Note: Instead of a tuple, an anonymous record can also be used to return `readReservations` and 
-`createReservation`.
+Note: In `readCreateReservationsD` instead of a tuple, an anonymous record can also be used to return `readReservations` and 
+`createReservation` together.
 
-## Printing the dependency list
+### Printing the dependency list
 
     tryAcceptD |> Depend.toString |> printfn "%s"
 
@@ -166,7 +176,33 @@ produces the following output:
     FSI_0002+CommonDefs+Globals.capacity               100
     FSI_0002+CommonDefs+Globals.connectionString       "some connection string"
     NoMore <fun:tryAcceptD@1241-4>
-    
+
+One interesting thing to notice here is that even though `tryAcceptD` has `readCreateReservationsD` as a dependency this one does not show in the list. Instead its dependents show. That means that as defined `readCreateReservationsD` cannot be injected.
+
+If we wanted to inject it then we could add the following:
+
+    let readCreateReservationsDD = Depend.depend0 <@ readCreateReservationsD @>
+
+    let tryAccept8D = Depend.depend {
+        let! capacity                = capacityD
+        let! readCreateReservationsD = readCreateReservationsDD
+        let! readReservations2
+           , createReservation2      = readCreateReservationsD
+        return
+        ...
+           
+by defining `readCreateReservationsDD` as a dependency of a dependency using `Depend.depend0` it allows us to also replace 
+`readCreateReservationsD`. Not when we print the dependencies it shows:
+
+    FSI_0004+CommonDefs+DB.createReservation           <fun:getName2@1776-1>
+    FSI_0004+CommonDefs+DB.readReservations            <fun:getName2@1776-1>
+    FSI_0004+CommonDefs+Globals.capacity               100
+    FSI_0004+CommonDefs+Globals.connectionString       "some connection string"
+    FSI_0004+DependWay.readCreateReservationsD         Dependency
+      (Some
+         ("FSI_0004+CommonDefs+Globals.connectionString", "some connection string"),
+       <fun:bindR@1813-9>)
+    NoMore <fun:tryAccept8D@2779-6>
 ## Generic functions
 
 Generic functions cannot be used directly, for instance, the following code causes an error:
