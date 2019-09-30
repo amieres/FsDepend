@@ -145,13 +145,15 @@ And refactor `tryAcceptD` this way:
            , createReservation2 = readCreateReservationsD
         return
             fun reservation ->
-                let! reservations   = readReservations2 reservation.Date
-                let  reservedSeats  = reservations |> List.sumBy (fun x -> x.Quantity)
+                let reservedSeats =
+                    readReservations2 reservation.Date |> List.sumBy (fun x -> x.Quantity)
                 if reservedSeats + reservation.Quantity <= capacity
-                then let!        i  = createReservation2 { reservation with IsAccepted = true } 
-                     return Some i
-                else return None
+                then createReservation2 { reservation with IsAccepted = true } |> Some
+                else None
     }
+
+Note: Instead of a tuple, an anonymous record can also be used to return `readReservations` and 
+`createReservation`.
 
 ## Printing the dependency list
 
@@ -170,7 +172,7 @@ produces the following output:
 Generic functions cannot be used directly, for instance, the following code causes an error:
 
     let log  fmt = Printf.ksprintf (printfn "%s") fmt
-    let logD ()  = Depend.depend0 <@ log @>   
+    let logD ()  = Depend.depend1 <@ log @>   
     
     let tryAcceptD = Depend.depend {
         let! log = logD() // use a function to avoid Generic Value error
