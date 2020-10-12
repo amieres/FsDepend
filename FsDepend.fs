@@ -1,4 +1,4 @@
-module Depend =
+module Depend
     open Microsoft.FSharp.Quotations.Patterns 
     open Microsoft.FSharp.Quotations.DerivedPatterns 
 
