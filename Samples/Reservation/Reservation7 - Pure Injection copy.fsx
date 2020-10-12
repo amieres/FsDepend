@@ -38,7 +38,7 @@ let tryAcceptD = Depend.depend {
         fun reservation ->
             reservation.Date
             |> db.readReservations 
-            |> flip (tryAcceptPure Globals.capacity) reservation
+            |> flip (tryAcceptPure capacity) reservation
             |> Option.map db.createReservation 
 }
 
@@ -47,7 +47,7 @@ let tryAcceptD = Depend.depend {
 let tryAccept = 
     tryAcceptD
     |> Depend.resolver 
-        [   Depend.replace0 <@ Globals.capacity     @> 2 
+        [   Depend.replace0 <@ Globals.capacity     @> 20
             Depend.replace2 <@ DB.readReservations  @> (fun _ _ -> []        ) 
             Depend.replace2 <@ DB.createReservation @> (fun _ r -> r.Quantity) 
         ]
