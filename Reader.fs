@@ -1,5 +1,7 @@
 type Reader<'T, 'R> = ('R -> 'T)
 
+let swap f a b = f b a
+
 module Reader =
     let inline wrap                         f  =  f : Reader<_,_>
     let inline getFun                       f  =  f 
