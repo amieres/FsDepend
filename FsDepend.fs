@@ -110,7 +110,7 @@ module Depend
             | Dependency(Some(nm, v), k)      ->
                 lst 
                 |> Seq.tryFind (fst >> ((=) nm))
-                |> Option.map  (snd >> fun v2 -> k v2  )
+                |> Option.map  (snd >> k       )
                 |> Option.defaultWith(fun ()  -> k v )
                 |> resolve
             | NoMore v                        ->   v
