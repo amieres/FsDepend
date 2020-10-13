@@ -48,8 +48,8 @@ let tryAccept =
     Date        = DateTime.Today
     Quantity    = 5
     IsAccepted  = false
-} 
-|> tryAccept
+}              
+|> tryAccept   
 |> printfn "%A"
 
 tryAcceptD |> Depend.toString |> printfn "%s"

@@ -17,6 +17,7 @@ let capacityR           (inj:IInject) = inj.capacity
 let readReservationsR   (inj:IInject) = inj.readReservations  
 let createReservationR  (inj:IInject) = inj.createReservation 
 
+// Reader<(Reservation -> int option), IInject>
 let tryAcceptR = reader {
     let! connectionString   = connectionStringR
     let! capacity           = capacityR

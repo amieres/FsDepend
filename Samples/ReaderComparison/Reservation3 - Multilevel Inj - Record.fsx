@@ -15,18 +15,27 @@ let capacityR           (inj:#ICapacity  ) = inj.Get
 let readReservationsR   (inj:#IDbFuncs   ) = inj.ReadRsrv   
 let createReservationR  (inj:#IDbFuncs   ) = inj.CreateRsrv 
 
+let dbFunctionsR() = reader {
+    let! connectionString  = connectionStringR
+    let! readReservations  = readReservationsR
+    let! createReservation = createReservationR
+
+    return {| readReservations  = readReservations  connectionString
+              createReservation = createReservation connectionString
+           |}
+}
+
+// unit -> Reader<(Reservation -> int option), 'a>
 let tryAcceptR() = reader {
-    let! connectionString   = connectionStringR
     let! capacity           = capacityR
-    let! readReservations   = readReservationsR
-    let! createReservation  = createReservationR
+    let! db                 = dbFunctionsR()
 
     return
         fun reservation ->
             let reservedSeats =
-                readReservations connectionString reservation.Date |> List.sumBy (fun x -> x.Quantity)
+                db.readReservations   reservation.Date |> List.sumBy (fun x -> x.Quantity)
             if reservedSeats + reservation.Quantity <= capacity
-            then createReservation connectionString { reservation with IsAccepted = true } |> Some
+            then db.createReservation { reservation with IsAccepted = true } |> Some
             else None
 }
 
@@ -50,6 +59,6 @@ let tryAccept =
     Date        = DateTime.Today
     Quantity    = 5
     IsAccepted  = false
-} 
-|> tryAccept
+}              
+|> tryAccept   
 |> printfn "%A"
