@@ -54,6 +54,26 @@ module Depend
     type Depend<'T> = 
     | Dependency of (string * obj) option * (obj -> Depend<'T>)
     | NoMore     of 'T
+    with
+        member dep.GetDependencies() =
+            let rec collect lst dep =
+                let     lst2 = dep :: lst
+                match dep with
+                | Dependency(None      , k) -> collect lst2 (k () )
+                | Dependency(Some(_, v), k) -> collect lst2 (k v  )
+                | NoMore f                  -> lst2
+            collect [] dep
+            |> List.filter (function| Depend.Dependency(None,_) -> false |_-> true) 
+            |> List.rev 
+        override dep.ToString() =
+            dep.GetDependencies()
+            |> Seq.choose       
+                (function 
+                | Depend.Dependency(Some(nm, v), next) -> sprintf "%-50s %A" nm v |> Some
+                | x -> None) 
+            |> Seq.distinct      
+            |> Seq.sort          
+            |> String.concat "\n"
 
     let dependByName nm (defF:'f) (kf:'f->'T) = Dependency(Some(nm, box defF), fun f -> NoMore (kf (unbox f)) )
 
@@ -123,26 +143,6 @@ module Depend
 
     let depend = DependBuilder()
 
-    let getDependencies dep =
-        let rec collect lst dep =
-            let     lst2 = dep :: lst
-            match dep with
-            | Dependency(None      , k) -> collect lst2 (k () )
-            | Dependency(Some(_, v), k) -> collect lst2 (k v  )
-            | NoMore f                  -> lst2
-        collect [] dep
-        |> List.filter (function| Depend.Dependency(None,_) -> false |_-> true) 
-        |> List.rev 
-
-    let toString dep =
-        getDependencies dep
-        |> Seq.map       
-            (function 
-            | Depend.Dependency(Some(nm, v), next) -> sprintf "%-50s %A" nm v
-            | x -> string x)
-        |> Seq.distinct
-        |> Seq.sort
-        |> String.concat "\n"
 
     module Operators =
         let (>>=) ma f = bind f ma

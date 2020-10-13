@@ -31,11 +31,11 @@ let tryAcceptR() = reader {
             else None
 }
 
-type Inject(connectionString, capacity, readReservations, createReservation) =
-    interface IConnString with member __.Get              = connectionString       
-    interface ICapacity   with member __.Get              = capacity               
-    interface IDbFuncs    with member __.ReadRsrv   p1 p2 = readReservations  p1 p2
-                               member __.CreateRsrv p1 p2 = createReservation p1 p2
+    type Inject(connectionString, capacity, readReservations, createReservation) =
+        interface IConnString with member __.Get              = connectionString       
+        interface ICapacity   with member __.Get              = capacity               
+        interface IDbFuncs    with member __.ReadRsrv   p1 p2 = readReservations  p1 p2
+                                   member __.CreateRsrv p1 p2 = createReservation p1 p2
 
 // Reservation -> int option
 let tryAccept = 

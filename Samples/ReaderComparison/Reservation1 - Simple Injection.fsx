@@ -5,17 +5,17 @@ open System
 open CommonDefs
 open Reader.Operators
 
-type IInject = {
+type Inject = {
     connectionString  : string
     capacity          : int
     readReservations  : string -> DateTime -> Reservation list
     createReservation : string -> Reservation -> int
 }
 
-let connectionStringR   (inj:IInject) = inj.connectionString  
-let capacityR           (inj:IInject) = inj.capacity          
-let readReservationsR   (inj:IInject) = inj.readReservations  
-let createReservationR  (inj:IInject) = inj.createReservation 
+let connectionStringR   (inj:Inject) = inj.connectionString  
+let capacityR           (inj:Inject) = inj.capacity          
+let readReservationsR   (inj:Inject) = inj.readReservations  
+let createReservationR  (inj:Inject) = inj.createReservation 
 
 // Reader<(Reservation -> int option), IInject>
 let tryAcceptR = reader {

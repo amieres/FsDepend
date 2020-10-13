@@ -62,4 +62,4 @@ let tryAccept =
 |> tryAccept
 |> printfn "%A"
 
-tryAcceptD |> Depend.toString |> printfn "%s"
+printfn "%O" tryAcceptD

@@ -49,3 +49,5 @@ let tryAccept =
 } 
 |> tryAccept
 |> printfn "%A"
+
+printfn "%O" tryAcceptD
