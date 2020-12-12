@@ -1,10 +1,10 @@
-# Forget FsDepend there is a better simpler Dependency
+## Forget ~~FsDepend~~, there is a better simpler dependency injection
 
-The simplest and best dependency injection method I know, (and I have tried them all: partial application, 
-Interfaces with Flexible types, Reader monad, I even developed my own version: **FsDepend**)
+The simplest and best dependency injection method I know (and I have tried them all: partial application, 
+Interfaces, Flexible types, Reader monad, I even developed my own version: **FsDepend**)
 is defined in just one line:
 
-    type Dependency<'T>(definition:'T) = member val D = definition  with get, set
+    type Dependency<'T>(def:'T) = member val D = def with get, set
 
 Every thing I list as features below for FsDepend is true of this implementation.
 It is so much simpler, clean and effective, than all the other options. 
@@ -25,11 +25,8 @@ Using the same Reservations example, here is how it is used. First we define the
             let connectionString = Dependency "some connection string"
 
         module DB =
-            let readReservationsDef (connectionString:string) (date:System.DateTime) : Reservation list = failwith "readReservations Not Implemented"
-            let createReservationDef (connectionString:string) (reservation:Reservation) : int = failwith "createReservation Not implemented"
-
-            let readReservations  = Dependency readReservationsDef
-            let createReservation = Dependency createReservationDef
+            let readReservations  = Dependency (fun (connectionString:string) (date:System.DateTime   ) -> failwith "readReservations Not Implemented"  : Reservation list)
+            let createReservation = Dependency (fun (connectionString:string) (reservation:Reservation) -> failwith "createReservation Not implemented" : int)
 
 and this is how it is used (notice `.D` for instance `DB.readReservations.D`):
 
@@ -43,11 +40,14 @@ and this is how it is used (notice `.D` for instance `DB.readReservations.D`):
             then DB.createReservation.D Globals.connectionString.D { reservation with IsAccepted = true } |> Some
             else None
 
-        // Injection
+this is how to inject:
+
         Globals.capacity        .D <-  25
         DB.readReservations     .D <- (fun cs _ -> printfn "readReservations  Connection String: %s" cs;[]        ) 
         DB.createReservation    .D <- (fun cs r -> printfn "createReservation Connection String: %s" cs;r.Quantity) 
         Globals.connectionString.D <- "new Connx Str"
+
+and run it as normal:
 
         {
             Date        = System.DateTime.Today
