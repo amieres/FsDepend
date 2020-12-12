@@ -6,11 +6,13 @@ is defined in just one line:
 
     type Dependency<'T>(def:'T) = member val D = def with get, set
 
-Every thing I list as features below for FsDepend is true of this implementation.
+Almost every thing I list as features below for FsDepend is true of this implementation.
 It is so much simpler, clean and effective, than all the other options. 
-No parameter passing, no monads, simple.
+No parameter passing, no monads, no special syntax, simple.
 
-Using the same Reservations example, here is how it is used. First we define the injectable elements with `Dependency`:
+Using the same Reservations example, here is how it is used. 
+
+First we define the injectable elements with `Dependency`:
 
     module CommonDefs =
 
@@ -21,8 +23,8 @@ Using the same Reservations example, here is how it is used. First we define the
         }
 
         module Globals =
-            let capacity         = Dependency 100
-            let connectionString = Dependency "some connection string"
+            let capacity          = Dependency 100
+            let connectionString  = Dependency "some connection string"
 
         module DB =
             let readReservations  = Dependency (fun (connectionString:string) (date:System.DateTime   ) -> failwith "readReservations Not Implemented"  : Reservation list)
@@ -42,9 +44,9 @@ and this is how it is used (notice `.D` for instance `DB.readReservations.D`):
 
 this is how to inject:
 
-        Globals.capacity        .D <-  25
         DB.readReservations     .D <- (fun cs _ -> printfn "readReservations  Connection String: %s" cs;[]        ) 
         DB.createReservation    .D <- (fun cs r -> printfn "createReservation Connection String: %s" cs;r.Quantity) 
+        Globals.capacity        .D <-  25
         Globals.connectionString.D <- "new Connx Str"
 
 and run it as normal:
@@ -65,8 +67,8 @@ This module provides a novel approach to dependency injection in F#.
 Among its features:
 - Simple and explicit injection definitions with defaults
 - Fast: functions are fully resolved and ready to be used
-- Selective, multilevel, partial and localized code injection
-- Capacity to print out injectable entries
+- Selective, multilevel, partial and ~~localized~~ code injection
+- ~~Capacity to print out injectable entries~~
 - A natural way to coding progresion with reduced refactoring
 
 please visit the Wiki for the documentation: https://github.com/amieres/FsDepend/wiki
