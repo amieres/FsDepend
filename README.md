@@ -1,7 +1,7 @@
-# Simpler Dependency
+# Forget FsDepend there is a better simpler Dependency
 
-The simplest and best dependency injection I know, (and I have tried them all: partial application, 
-Interfaces with Flexible types, Reader monad, I even developed my own: *FsDepend*)
+The simplest and best dependency injection method I know, (and I have tried them all: partial application, 
+Interfaces with Flexible types, Reader monad, I even developed my own version: **FsDepend**)
 is defined in just one line:
 
     type Dependency<'T>(definition:'T) = member val D = definition  with get, set
@@ -57,7 +57,7 @@ and this is how it is used (notice `.D` for instance `DB.readReservations.D`):
         |> tryAccept
         |> printfn "%A"
 
-# FsDepend
+# ~~FsDepend~~ (Deprecated)
 Functional Dependency Injection for FSharp
 
 This module provides a novel approach to dependency injection in F#.
